@@ -1,7 +1,7 @@
 package avl
 
 import (
-	"sync"
+	"reflect"
 	"testing"
 )
 
@@ -15,9 +15,9 @@ func TestEmptyTree(t *testing.T) {
 	}
 }
 
-func TestAddOneingOneValue(t *testing.T) {
+func TestPutOneingOneValue(t *testing.T) {
 	tree := NewTree[int, bool]()
-	tree.AddOne(1, true)
+	tree.PutOne(1, true)
 	if tree.Size() != 1 {
 		t.Errorf("Tree size is %d, want 1", tree.Size())
 	}
@@ -29,12 +29,12 @@ func TestAddOneingOneValue(t *testing.T) {
 	}
 }
 
-func TestAddOneingMoreValues(t *testing.T) {
+func TestPutOneingMoreValues(t *testing.T) {
 
 	tree := NewTree[int, bool]()
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(3, true)
+	tree.PutOne(2, true)
+	tree.PutOne(1, true)
+	tree.PutOne(3, true)
 	if tree.Size() != 3 {
 		t.Errorf("Tree size is %d, want 3", tree.Size())
 	}
@@ -45,11 +45,11 @@ func TestAddOneingMoreValues(t *testing.T) {
 		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
 	}
 	tree = NewTree[int, bool]()
-	tree.AddOne(4, true)
-	tree.AddOne(5, true)
-	tree.AddOne(2, true)
-	tree.AddOne(3, true)
-	tree.AddOne(1, true)
+	tree.PutOne(4, true)
+	tree.PutOne(5, true)
+	tree.PutOne(2, true)
+	tree.PutOne(3, true)
+	tree.PutOne(1, true)
 	if tree.Size() != 5 {
 		t.Errorf("Tree size is %d, want 3", tree.Size())
 	}
@@ -62,11 +62,11 @@ func TestAddOneingMoreValues(t *testing.T) {
 
 }
 
-func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
+func TestPutOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 	tree := NewTree[int, bool]()
-	tree.AddOne(1, true)
-	tree.AddOne(2, true)
-	tree.AddOne(3, true)
+	tree.PutOne(1, true)
+	tree.PutOne(2, true)
+	tree.PutOne(3, true)
 	if tree.Size() != 3 {
 		t.Errorf("Tree size is %d, want 3", tree.Size())
 	}
@@ -77,8 +77,8 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
 	}
 
-	tree.AddOne(4, true)
-	tree.AddOne(5, true)
+	tree.PutOne(4, true)
+	tree.PutOne(5, true)
 	if tree.Size() != 5 {
 		t.Errorf("Tree size is %d, want 5", tree.Size())
 	}
@@ -89,7 +89,7 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
 	}
 
-	tree.AddOne(6, true)
+	tree.PutOne(6, true)
 	if tree.Size() != 6 {
 		t.Errorf("Tree size is %d, want 6", tree.Size())
 	}
@@ -100,7 +100,7 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
 	}
 
-	tree.AddOne(7, true)
+	tree.PutOne(7, true)
 	if tree.Size() != 7 {
 		t.Errorf("Tree size is %d, want 7", tree.Size())
 	}
@@ -111,8 +111,8 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
 	}
 
-	tree.AddOne(8, true)
-	tree.AddOne(9, true)
+	tree.PutOne(8, true)
+	tree.PutOne(9, true)
 	if tree.Size() != 9 {
 		t.Errorf("Tree size is %d, want 9", tree.Size())
 	}
@@ -123,7 +123,7 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
 	}
 
-	tree.AddOne(10, true)
+	tree.PutOne(10, true)
 	if tree.Size() != 10 {
 		t.Errorf("Tree size is %d, want 10", tree.Size())
 	}
@@ -134,16 +134,16 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
 	}
 
-	tree.AddOne(1, true)
-	tree.AddOne(2, true)
-	tree.AddOne(3, true)
-	tree.AddOne(4, true)
-	tree.AddOne(5, true)
-	tree.AddOne(6, true)
-	tree.AddOne(7, true)
-	tree.AddOne(8, true)
-	tree.AddOne(9, true)
-	tree.AddOne(10, true)
+	tree.PutOne(1, true)
+	tree.PutOne(2, true)
+	tree.PutOne(3, true)
+	tree.PutOne(4, true)
+	tree.PutOne(5, true)
+	tree.PutOne(6, true)
+	tree.PutOne(7, true)
+	tree.PutOne(8, true)
+	tree.PutOne(9, true)
+	tree.PutOne(10, true)
 	if tree.Size() != 10 {
 		t.Errorf("Tree size is %d, want 10", tree.Size())
 	}
@@ -155,64 +155,64 @@ func TestAddOneingMoreValuesThatUnbalanceTree(t *testing.T) {
 	}
 }
 
-func TestAddOneingMoreValuesThatUnbalanceTreeString(t *testing.T) {
+func TestPutOneingMoreValuesThatUnbalanceTreeString(t *testing.T) {
 	tree := NewTree[string, bool]()
-	tree.AddOne("a", true)
-	tree.AddOne("b", true)
-	tree.AddOne("c", true)
+	tree.PutOne("a", true)
+	tree.PutOne("b", true)
+	tree.PutOne("c", true)
 	if tree.Size() != 3 {
 		t.Errorf("Tree size is %d, want 3", tree.Size())
 	}
 	if tree.Depth() != 2 {
 		t.Errorf("Tree depth is %d, want 2", tree.Depth())
 	}
-	tree.AddOne("d", true)
-	tree.AddOne("e", true)
+	tree.PutOne("d", true)
+	tree.PutOne("e", true)
 	if tree.Size() != 5 {
 		t.Errorf("Tree size is %d, want 5", tree.Size())
 	}
 	if tree.Depth() != 3 {
 		t.Errorf("Tree depth is %d, want 3", tree.Depth())
 	}
-	tree.AddOne("f", true)
+	tree.PutOne("f", true)
 	if tree.Size() != 6 {
 		t.Errorf("Tree size is %d, want 6", tree.Size())
 	}
 	if tree.Depth() != 3 {
 		t.Errorf("Tree depth is %d, want 3", tree.Depth())
 	}
-	tree.AddOne("g", true)
+	tree.PutOne("g", true)
 	if tree.Size() != 7 {
 		t.Errorf("Tree size is %d, want 7", tree.Size())
 	}
 	if tree.Depth() != 3 {
 		t.Errorf("Tree depth is %d, want 3", tree.Depth())
 	}
-	tree.AddOne("h", true)
-	tree.AddOne("i", true)
+	tree.PutOne("h", true)
+	tree.PutOne("i", true)
 	if tree.Size() != 9 {
 		t.Errorf("Tree size is %d, want 9", tree.Size())
 	}
 	if tree.Depth() != 4 {
 		t.Errorf("Tree depth is %d, want 4", tree.Depth())
 	}
-	tree.AddOne("j", true)
+	tree.PutOne("j", true)
 	if tree.Size() != 10 {
 		t.Errorf("Tree size is %d, want 10", tree.Size())
 	}
 	if tree.Depth() != 4 {
 		t.Errorf("Tree depth is %d, want 4", tree.Depth())
 	}
-	tree.AddOne("a", true)
-	tree.AddOne("b", true)
-	tree.AddOne("c", true)
-	tree.AddOne("d", true)
-	tree.AddOne("e", true)
-	tree.AddOne("f", true)
-	tree.AddOne("g", true)
-	tree.AddOne("h", true)
-	tree.AddOne("i", true)
-	tree.AddOne("j", true)
+	tree.PutOne("a", true)
+	tree.PutOne("b", true)
+	tree.PutOne("c", true)
+	tree.PutOne("d", true)
+	tree.PutOne("e", true)
+	tree.PutOne("f", true)
+	tree.PutOne("g", true)
+	tree.PutOne("h", true)
+	tree.PutOne("i", true)
+	tree.PutOne("j", true)
 	if tree.Size() != 10 {
 		t.Errorf("Tree size is %d, want 10", tree.Size())
 	}
@@ -221,13 +221,13 @@ func TestAddOneingMoreValuesThatUnbalanceTreeString(t *testing.T) {
 	}
 }
 
-func TestDoubleRotation(t *testing.T) {
+func TestAddWithDoubleRotation(t *testing.T) {
 	tree := NewTree[int, bool]()
-	tree.AddOne(7, true)
-	tree.AddOne(8, true)
-	tree.AddOne(4, true)
-	tree.AddOne(1, true)
-	tree.AddOne(5, true)
+	tree.PutOne(7, true)
+	tree.PutOne(8, true)
+	tree.PutOne(4, true)
+	tree.PutOne(1, true)
+	tree.PutOne(5, true)
 	if tree.Size() != 5 {
 		t.Errorf("Tree size is %d, want 5", tree.Size())
 	}
@@ -239,8 +239,8 @@ func TestDoubleRotation(t *testing.T) {
 	}
 	// At this point, the Tree is balanced without any rotation
 
-	//AddOneing 6 will cause double rotation
-	tree.AddOne(6, true)
+	//PutOneing 6 will cause double rotation
+	tree.PutOne(6, true)
 	if tree.Size() != 6 {
 		t.Errorf("Tree size is %d, want 5", tree.Size())
 	}
@@ -254,10 +254,10 @@ func TestDoubleRotation(t *testing.T) {
 
 func TestGettingSomeValues(t *testing.T) {
 	tree := NewTree[int, string]()
-	tree.AddOne(7, "g")
-	tree.AddOne(8, "h")
-	tree.AddOne(1, "a")
-	tree.AddOne(3, "c")
+	tree.PutOne(7, "g")
+	tree.PutOne(8, "h")
+	tree.PutOne(1, "a")
+	tree.PutOne(3, "c")
 
 	if value, ok := tree.Get(3); !ok || value != "c" {
 		if !ok {
@@ -300,7 +300,7 @@ func TestGettingSomeValues(t *testing.T) {
 	}
 
 	//changing a key
-	tree.AddOne(1, "z")
+	tree.PutOne(1, "z")
 
 	if value, ok := tree.Get(1); !ok || value != "z" {
 		if !ok {
@@ -311,499 +311,240 @@ func TestGettingSomeValues(t *testing.T) {
 	}
 }
 
-func TestRemovingNonPresentValues(t *testing.T) {
-	tree := NewTree[int, string]()
-	tree.AddOne(7, "g")
-	tree.AddOne(8, "h")
-	tree.AddOne(1, "a")
-	tree.AddOne(3, "c")
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 7 {
-		t.Errorf("RootNode is %d, want 7", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(2); ok {
-		t.Errorf("Removing 2 should return false")
-	}
-	if ok := tree.RemoveOne(9); ok {
-		t.Errorf("Removing 2 should return false")
-	}
-}
-
-func TestRemovingALeafWithoutUnbalance(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(3, true)
-	tree.AddOne(1, true)
-	tree.AddOne(6, true)
-	tree.AddOne(5, true)
-	tree.AddOne(7, true)
-
-	if tree.Size() != 5 {
-		t.Errorf("Tree size is %d, want 5", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(7); !ok {
-		t.Errorf("Removing 7 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(5); !ok {
-		t.Errorf("Removing 5 should return true")
-	}
-	if tree.Size() != 3 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(6); !ok {
-		t.Errorf("Removing 6 should return true")
-	}
-	if tree.Size() != 2 {
-		t.Errorf("Tree size is %d, want 2", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(1); !ok {
-		t.Errorf("Removing 1 should return true")
-	}
-	if tree.Size() != 1 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 1 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(3); !ok {
-		t.Errorf("Removing 3 should return true")
-	}
-	if tree.Size() != 0 {
-		t.Errorf("Tree size is %d, want 0", tree.Size())
-	}
-	if tree.Depth() != 0 {
-		t.Errorf("Tree depth is %d, want 0", tree.Depth())
-	}
-	if tree.RootNode != nil {
-		t.Errorf("RootNode is %v, want nil", tree.RootNode)
-	}
-}
-
-func TestRemovingALeafWithUnbalance(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(3, true)
-	tree.AddOne(1, true)
-	tree.AddOne(6, true)
-	tree.AddOne(5, true)
-	tree.AddOne(7, true)
-
-	if tree.Size() != 5 {
-		t.Errorf("Tree size is %d, want 5", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	if ok := tree.RemoveOne(1); !ok {
-		t.Errorf("Removing 1 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 6 {
-		t.Errorf("RootNode is %d, want 6", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingSingleChildWithoutBalance(t *testing.T) {
-	tree := NewTree[int, bool]()
-
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(3, true)
-	tree.AddOne(4, true)
-
-	if ok := tree.RemoveOne(3); !ok {
-		t.Errorf("Removing 3 should return true")
-	}
-	if tree.Size() != 3 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 2 {
-		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
-	}
-
-	tree = NewTree[int, bool]()
-
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(4, true)
-	tree.AddOne(3, true)
-
-	if ok := tree.RemoveOne(4); !ok {
-		t.Errorf("Removing 4 should return true")
-	}
-	if tree.Size() != 3 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 2 {
-		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
-	}
-
-	tree = NewTree[int, bool]()
-
-	tree.AddOne(3, true)
-	tree.AddOne(4, true)
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-
-	if ok := tree.RemoveOne(2); !ok {
-		t.Errorf("Removing 2 should return true")
-	}
-	if tree.Size() != 3 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	tree = NewTree[int, bool]()
-
-	tree.AddOne(3, true)
-	tree.AddOne(4, true)
-	tree.AddOne(1, true)
-	tree.AddOne(2, true)
-
-	if ok := tree.RemoveOne(1); !ok {
-		t.Errorf("Removing 1 should return true")
-	}
-	if tree.Size() != 3 {
-		t.Errorf("Tree size is %d, want 3", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-
-	tree = NewTree[int, bool]()
-
-	tree.AddOne(1, true)
-	tree.AddOne(2, true)
-	if ok := tree.RemoveOne(1); !ok {
-		t.Errorf("Removing 1 should return true")
-	}
-	if tree.Size() != 1 {
-		t.Errorf("Tree size is %d, want 1", tree.Size())
-	}
-	if tree.Depth() != 1 {
-		t.Errorf("Tree depth is %d, want 1", tree.Depth())
-	}
-	if tree.RootNode == nil || tree.RootNode.Key != 2 {
-		t.Errorf("RootNode is %v, want 2", tree.RootNode)
-	}
-
-	tree = NewTree[int, bool]()
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	if ok := tree.RemoveOne(2); !ok {
-		t.Errorf("Removing 2 should return true")
-	}
-	if tree.Size() != 1 {
-		t.Errorf("Tree size is %d, want 1", tree.Size())
-	}
-	if tree.Depth() != 1 {
-		t.Errorf("Tree depth is %d, want 1", tree.Depth())
-	}
-	if tree.RootNode.Key != 1 {
-		t.Errorf("RootNode is %d, want 1", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingSingleChildWithBalance(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(9, true)
-	tree.AddOne(5, true)
-	tree.AddOne(10, true)
-	tree.AddOne(6, true)
-	tree.AddOne(12, true)
-	tree.AddOne(4, true)
-	tree.AddOne(3, true)
-
-	if tree.Size() != 7 {
-		t.Errorf("Tree size is %d, want 7", tree.Size())
-	}
-	if tree.Depth() != 4 {
-		t.Errorf("Tree depth is %d, want 4", tree.Depth())
-	}
-	if tree.RootNode == nil || tree.RootNode.Key != 9 {
-		t.Errorf("RootNode is %v, want 9", tree.RootNode)
-	}
-
-	if ok := tree.RemoveOne(10); !ok {
-		t.Errorf("Removing 10 should return true")
-	}
-	if tree.Size() != 6 {
-		t.Errorf("Tree size is %d, want 6", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 5 {
-		t.Errorf("RootNode is %d, want 5", tree.RootNode.Key)
-	}
-
-}
-
-func TestRemovingWithBothChild(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(3, true)
-
-	if ok := tree.RemoveOne(2); !ok {
-		t.Errorf("Removing 2 should return true")
-	}
-	if tree.Size() != 2 {
-		t.Errorf("Tree size is %d, want 2", tree.Size())
-	}
-	if tree.Depth() != 2 {
-		t.Errorf("Tree depth is %d, want 2", tree.Depth())
-	}
-	if tree.RootNode.Key != 1 {
-		t.Errorf("RootNode is %d, want 1", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingWithBothChildSuccessorPrevious(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(4, true)
-	tree.AddOne(5, true)
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(3, true)
-
-	if ok := tree.RemoveOne(4); !ok {
-		t.Errorf("Removing 4 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 2 {
-		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingWithBothChildSuccessorNext(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(4, true)
-	tree.AddOne(3, true)
-	tree.AddOne(5, true)
-
-	if ok := tree.RemoveOne(2); !ok {
-		t.Errorf("Removing 2 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 4 {
-		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingWithBothChildSuccessorPreviousMiddle(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(4, true)
-	tree.AddOne(5, true)
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(3, true)
-
-	if ok := tree.RemoveOne(2); !ok {
-		t.Errorf("Removing 2 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 4 {
-		t.Errorf("RootNode is %d, want 4", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingWithBothChildSuccessorNextMiddle(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(2, true)
-	tree.AddOne(1, true)
-	tree.AddOne(4, true)
-	tree.AddOne(3, true)
-	tree.AddOne(5, true)
-
-	if ok := tree.RemoveOne(4); !ok {
-		t.Errorf("Removing 4 should return true")
-	}
-	if tree.Size() != 4 {
-		t.Errorf("Tree size is %d, want 4", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 2 {
-		t.Errorf("RootNode is %d, want 2", tree.RootNode.Key)
-	}
-}
-
-func TestRemovingWithBothChildSuccessorWithRotations(t *testing.T) {
-	tree := NewTree[int, bool]()
-	tree.AddOne(5, true)
-	tree.AddOne(2, true)
-	tree.AddOne(9, true)
-	tree.AddOne(7, true)
-	tree.AddOne(3, true)
-	tree.AddOne(1, true)
-	tree.AddOne(4, true)
-
-	if ok := tree.RemoveOne(5); !ok {
-		t.Errorf("Removing 5 should return true")
-	}
-	if tree.Size() != 6 {
-		t.Errorf("Tree size is %d, want 6", tree.Size())
-	}
-	if tree.Depth() != 3 {
-		t.Errorf("Tree depth is %d, want 3", tree.Depth())
-	}
-	if tree.RootNode.Key != 3 {
-		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
-	}
-}
-
-func TestAddOneingManyValues(t *testing.T) {
-
+func TestAddgManyValues(t *testing.T) {
 	tree := NewTree[int, int]()
-
 	items := make([]struct {
 		key   int
 		value int
 	}, 0)
 
-	for i := 0; i < 2000; i++ {
+	ITEMS := 8000
+
+	for i := 0; i < ITEMS; i++ {
 		items = append(items, struct {
 			key   int
 			value int
 		}{key: i, value: i})
 	}
 
-	tree.Add(items...)
+	tree.Put(items...)
 
-	if tree.Size() != 2000 {
-		t.Errorf("Tree size is %d, want 2000", tree.Size())
+	if tree.Size() != ITEMS {
+		t.Errorf("Tree size is %d, want %v", tree.Size(), ITEMS)
 	}
 	t.Logf("Tree depth is %d and RootNode key is %d", tree.Depth(), tree.RootNode.Key)
 }
 
-func TestAddOneingManyMoreValuesGetThemAndDeleteThem(t *testing.T) {
-
+func TestPrint(t *testing.T) {
 	tree := NewTree[int, int]()
-	const RECORDS = 100000
 
-	itemsToAdd := make([]struct {
-		key   int
-		value int
-	}, 0)
-	itemsToRemove := make([]int, 0)
-
-	for i := 0; i < RECORDS; i++ {
-		itemsToAdd = append(itemsToAdd, struct {
-			key   int
-			value int
-		}{key: i, value: i})
-		itemsToRemove = append(itemsToRemove, i)
+	for i := 0; i < 10; i++ {
+		tree.PutOne(i, i)
 	}
 
-	adddedItems := tree.Add(itemsToAdd...)
+	printedKeys := tree.PrintKeys(0)
+	printedValues := tree.PrintValues(0)
 
-	if tree.Size() != RECORDS {
-		t.Errorf("Tree size is %d, want %d", tree.Size(), RECORDS)
-	}
-	if adddedItems != RECORDS {
-		t.Errorf("%d added items, want %d", adddedItems, RECORDS)
-	}
-	t.Logf("Tree depth is %d and RootNode key is %d", tree.Depth(), tree.RootNode.Key)
+	keys := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
-	var wg sync.WaitGroup
-	for i := 0; i < RECORDS; i++ {
-		wg.Add(1)
-		go func(i int) {
-			if value, ok := tree.Get(i); !ok || value != i {
-				t.Errorf("Getting %d return false, want true", i)
-			}
-			wg.Done()
-		}(i)
-	}
-	wg.Wait()
-
-	removedItems := tree.Remove(itemsToRemove...)
-	if tree.Size() != 0 {
-		t.Errorf("Tree size is %d, want 0", tree.Size())
-	}
-	if removedItems != RECORDS {
-		t.Errorf("%d removed items, want %d", removedItems, RECORDS)
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
 	}
 
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(1)
+	printedValues = tree.PrintValues(1)
+	keys = []int{3}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(2)
+	printedValues = tree.PrintValues(2)
+	keys = []int{1, 7}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(3)
+	printedValues = tree.PrintValues(3)
+	keys = []int{0, 2, 5, 8}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(4)
+	printedValues = tree.PrintValues(4)
+	keys = []int{4, 6, 9}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(5)
+
+	if len(printedKeys) != 0 {
+		t.Errorf("PrintKeys() lenght is %v, want 0", len(printedKeys))
+	}
+
+	size := tree.Size()
+	depth := tree.Depth()
+
+	if size != 10 {
+		t.Errorf("Size is %v, want 10", size)
+	}
+
+	if depth != 4 {
+		t.Errorf("Depth is %v, want 4", depth)
+	}
+
+	if tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns false")
+	}
+
+	tree.Delete(7, 5, 6)
+
+	if !tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns true")
+	}
+
+	size = tree.Size()
+	depth = tree.Depth()
+
+	if size != 7 {
+		t.Errorf("Size is %v, want 7", size)
+	}
+
+	if depth != 4 {
+		t.Errorf("Depth is %v, want 4", depth)
+	}
+
+	printedKeys = tree.PrintKeys(0)
+	printedValues = tree.PrintValues(0)
+
+	keys = []int{0, 1, 2, 3, 4, 8, 9}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(1)
+	printedValues = tree.PrintValues(1)
+	keys = []int{3}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(2)
+	printedValues = tree.PrintValues(2)
+	keys = []int{1}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(3)
+	printedValues = tree.PrintValues(3)
+	keys = []int{0, 2, 8}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(4)
+	printedValues = tree.PrintValues(4)
+	keys = []int{4, 9}
+
+	if !reflect.DeepEqual(printedKeys, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
+	}
+	if !reflect.DeepEqual(printedValues, keys) {
+		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
+	}
+
+	printedKeys = tree.PrintKeys(5)
+
+	if len(printedKeys) != 0 {
+		t.Errorf("PrintKeys() lenght is %v, want 0", len(printedKeys))
+	}
+
+	tree.PutOne(5, 5)
+	tree.PutOne(6, 6)
+	tree.PutOne(7, 7)
+
+	if tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns false")
+	}
+
+	size = tree.Size()
+	depth = tree.Depth()
+
+	if size != 10 {
+		t.Errorf("Size is %v, want 10", size)
+	}
+
+	if depth != 4 {
+		t.Errorf("Depth is %v, want 4", depth)
+	}
+
+	if tree.Flush() != false {
+		t.Errorf("Flush should returns false when no need")
+	}
+
+	tree.Delete(5, 6, 7)
+	if !tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns true")
+	}
+
+	result := tree.Flush()
+	if !result {
+		t.Errorf("Flush should returns true after Flushing")
+	}
+
+	size = tree.Size()
+	depth = tree.Depth()
+
+	if size != 7 {
+		t.Errorf("Size is %v, want 7", size)
+	}
+
+	if depth != 3 {
+		t.Errorf("Depth is %v, want 3", depth)
+	}
+
+	for depth := 1; depth <= tree.Depth(); depth++ {
+		t.Logf("%v", tree.PrintValues(uint(depth)))
+	}
 }

@@ -8,13 +8,16 @@ type Node[K Ordered, V any] struct {
 	Key                    K           // Key of the Node must be ordered
 	Value                  V           // Value of the Node can be anything
 	Parent, Previous, Next *Node[K, V] // Parent, Previous and Next are references to other Node in the Tree
+	Deleted                bool
 }
 
 // Size() returns the Size of the node + its children
 // it returns 1 + recursive size of its children
-func (n *Node[K, V]) Size() int {
+func (n *Node[K, V]) Size() (size int) {
 
-	size := 1
+	if !n.Deleted {
+		size++
+	}
 	if n.Previous != nil {
 		size += n.Previous.Size()
 	}
@@ -46,28 +49,60 @@ func (n *Node[K, V]) Depth() int {
 
 }
 
-// Add() add a new Node in the tree, preserving the order and the balance of the Tree
-func (n *Node[K, V]) Add(key K, value V) *Node[K, V] {
+func (n *Node[K, V]) Print(wantedDepth, actualDepth uint) (nodes []*Node[K, V]) {
+	if wantedDepth != 0 {
+		if wantedDepth == actualDepth && !n.Deleted {
+			nodes = append(nodes, n)
+			return nodes
+		} else {
+			if n.Previous != nil {
+				nodes = n.Previous.Print(wantedDepth, actualDepth+1)
+			}
+			if n.Next != nil {
+				nodes = append(nodes, n.Next.Print(wantedDepth, actualDepth+1)...)
+			}
+			return nodes
+		}
+	}
+
+	if n.Previous != nil {
+		nodes = n.Previous.Print(wantedDepth, actualDepth)
+	}
+	if !n.Deleted {
+		nodes = append(nodes, n)
+	}
+	if n.Next != nil {
+		nodes = append(nodes, n.Next.Print(wantedDepth, actualDepth)...)
+	}
+	return
+}
+
+// Put() add a new Node in the tree, preserving the order and the balance of the Tree
+func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V], unDeleteNode bool) {
 	switch {
 	case key > n.Key: //key is bigger than the n.Key
 		if n.Next != nil { //delegates to its Next (if exist)
-			return n.Next.Add(key, value)
+			return n.Next.Put(key, value)
 		}
 		//otherwise : create a new Node and affect to its next
 		n.Next = &Node[K, V]{Key: key, Parent: n, Value: value}
-		return n.balance()
+		return n.balance(), false
 
 	case key < n.Key: //key is smaller than the n.Key
 		if n.Previous != nil { //delegates to its Previous (if exist)
-			return n.Previous.Add(key, value)
+			return n.Previous.Put(key, value)
 		}
 		//otherwise : create a new Node and affect to its previiys
 		n.Previous = &Node[K, V]{Key: key, Parent: n, Value: value}
-		return n.balance()
+		return n.balance(), false
 
 	default: //key is the same than the n.Key so replace the Value
 		n.Value = value
-		return n.RootNode()
+		if n.Deleted {
+			n.Deleted = false
+			return n.RootNode(), true
+		}
+		return n.RootNode(), false
 	}
 }
 
@@ -196,97 +231,10 @@ func (n *Node[K, V]) Get(key K) *Node[K, V] {
 		return nil
 
 	default: //This is the key !
-		return n
-	}
-}
-
-func (n *Node[K, V]) biggestChild() *Node[K, V] {
-	if n.Next == nil {
-		return n
-	}
-	return n.Next.biggestChild()
-}
-
-func (n *Node[K, V]) smallestChild() *Node[K, V] {
-	if n.Previous == nil {
-		return n
-	}
-	return n.Previous.biggestChild()
-}
-
-// Remove() removes a node with the key
-func (n *Node[K, V]) Remove() *Node[K, V] {
-
-	//the node is a leaf, simply delete it
-	if n.Next == nil && n.Previous == nil {
-		if n.Parent == nil {
+		if !n.Deleted {
+			return n
+		} else {
 			return nil
-		} else {
-			if n.Parent.Next == n {
-				n.Parent.Next = nil
-			} else {
-				n.Parent.Previous = nil
-			}
-			newRoot := n.Parent.balance()
-			n.Parent = nil
-			return newRoot
 		}
 	}
-
-	//the node has an only child
-	if (n.Next == nil && n.Previous != nil) || (n.Next != nil && n.Previous == nil) {
-		child := n.Next
-		if child == nil {
-			child = n.Previous
-		}
-
-		n.Next, n.Previous = nil, nil
-
-		if n.Parent == nil {
-			child.Parent = nil
-			return child
-		} else {
-			if n.Parent.Next == n {
-				n.Parent.Next = child
-			} else {
-				n.Parent.Previous = child
-			}
-			child.Parent = n.Parent
-			newRoot := n.Parent.balance()
-			n.Parent = nil
-			return newRoot
-		}
-	}
-
-	//the node has a previous and a next
-	//check the deeper child
-
-	previousDepth, nextDepth := n.Previous.Depth(), n.Next.Depth()
-
-	successor, attachment, location := n.Previous, n.Next, n.Previous.biggestChild()
-	if nextDepth > previousDepth {
-		successor, attachment, location = n.Next, n.Previous, n.Next.smallestChild()
-	}
-
-	n.Previous = nil
-	n.Next = nil
-	attachment.Parent = location
-	if previousDepth >= nextDepth {
-		location.Next = attachment
-	} else {
-		location.Previous = attachment
-	}
-
-	successor.Parent = n.Parent
-	if n.Parent != nil {
-		if n.Parent.Next == n {
-			n.Parent.Next = successor
-		} else {
-			n.Parent.Previous = successor
-		}
-	}
-
-	n.Parent = nil
-
-	return location.balance()
 }
