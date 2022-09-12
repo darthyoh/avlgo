@@ -171,6 +171,7 @@ func (t *Tree[K, V]) Get(key K) (value V, ok bool) {
 }
 
 // Delete() marks as "deleted" the nodes corresponding to the passed keys
+// returns false if all keys aren't present in the tree
 func (t *Tree[K, V]) Delete(keys ...K) bool {
 
 	foundNodes := make([]*Node[K, V], 0)
@@ -187,8 +188,10 @@ func (t *Tree[K, V]) Delete(keys ...K) bool {
 	defer t.Unlock()
 
 	for _, n := range foundNodes {
-		n.Deleted = true
-		t.deletedNodes++
+		if !n.Deleted {
+			n.Deleted = true
+			t.deletedNodes++
+		}
 	}
 
 	return true

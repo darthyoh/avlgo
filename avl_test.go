@@ -547,4 +547,21 @@ func TestPrint(t *testing.T) {
 	for depth := 1; depth <= tree.Depth(); depth++ {
 		t.Logf("%v", tree.PrintValues(uint(depth)))
 	}
+
+	if tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns false")
+	}
+
+	tree.Delete(3)
+	tree.Delete(3)
+
+	if !tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns true")
+	}
+
+	tree.PutOne(3, 3)
+	if tree.NeedFlush() {
+		t.Errorf("NeedFlush should returns false")
+	}
+
 }
