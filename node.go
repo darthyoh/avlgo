@@ -6,6 +6,17 @@ import (
 	"sync"
 )
 
+// jsonNode struct is a wrapper struct used for Marshalling and Unmarshalling operations
+type jsonNode[K Ordered, V any] struct {
+	ID         string `json:"ID"`
+	Key        K      `json:"key"`
+	Value      V      `json:"value"`
+	ParentID   string `json:"parentId,omitempty"`
+	PreviousID string `json:"previousId,omitempty"`
+	NextID     string `json:"nextId,omitempty"`
+	Deleted    bool   `json:"deleted"`
+}
+
 // Node is one element of a Tree
 type Node[K Ordered, V any] struct {
 	sync.Mutex
@@ -18,15 +29,7 @@ type Node[K Ordered, V any] struct {
 // MarshalJSON **flats** the node replacing pointers to adresses as ID
 func (n *Node[K, V]) MarshalJSON() ([]byte, error) {
 
-	marshalNode := &struct {
-		ID         string `json:"ID"`
-		Key        K      `json:"key"`
-		Value      V      `json:"value"`
-		ParentID   string `json:"parentId,omitempty"`
-		PreviousID string `json:"previousId,omitempty"`
-		NextID     string `json:"nextId,omitempty"`
-		Deleted    bool   `json:"deleted"`
-	}{
+	marshalNode := jsonNode[K, V]{
 		ID:      fmt.Sprintf("%p", n),
 		Key:     n.Key,
 		Value:   n.Value,

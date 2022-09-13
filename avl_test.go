@@ -333,7 +333,6 @@ func TestAddgManyValues(t *testing.T) {
 	if tree.Size() != ITEMS {
 		t.Errorf("Tree size is %d, want %v", tree.Size(), ITEMS)
 	}
-	t.Logf("Tree depth is %d and RootNode key is %d", tree.Depth(), tree.RootNode.Key)
 }
 
 func TestPrint(t *testing.T) {
@@ -545,10 +544,6 @@ func TestPrint(t *testing.T) {
 		t.Errorf("Depth is %v, want 3", depth)
 	}
 
-	for depth := 1; depth <= tree.Depth(); depth++ {
-		t.Logf("%v", tree.PrintValues(uint(depth)))
-	}
-
 	if tree.NeedFlush() {
 		t.Errorf("NeedFlush should returns false")
 	}
@@ -567,7 +562,7 @@ func TestPrint(t *testing.T) {
 
 }
 
-func TestMarshal(t *testing.T) {
+func TestMarshalAndUnmarshal(t *testing.T) {
 	tree := NewTree[int, int]()
 	tree.PutOne(0, 0)
 	tree.PutOne(1, 1)
@@ -577,15 +572,32 @@ func TestMarshal(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("The tree should be marshal : %v", err)
-	} else {
-		t.Logf(string(result))
 	}
 
-	var aux map[string]interface{}
+	tree2 := NewTree[int, int]()
+	tree.PutOne(5, 5)
+	tree.PutOne(6, 6)
+	tree.PutOne(7, 7)
+	tree.PutOne(8, 8)
+	tree.PutOne(9, 9)
+	tree.PutOne(10, 10)
+	tree.Delete(7)
 
-	if err = json.Unmarshal(result, &aux); err != nil {
+	if err = json.Unmarshal(result, &tree2); err != nil {
 		t.Errorf("The tree should be unmarshal : %v", err)
-	} else {
-		t.Logf("%v", aux)
 	}
+
+	if tree2.Size() != 3 {
+		t.Errorf("The size is %v, want 3", tree2.Size())
+	}
+	if tree2.Depth() != 2 {
+		t.Errorf("The depth is %v, want 2", tree2.Depth())
+	}
+	if tree2.NeedFlush() {
+		t.Errorf("There's no need to flush")
+	}
+	if !reflect.DeepEqual([]int{0, 1, 2}, tree2.PrintKeys(0)) {
+		t.Errorf("PrintKeys(0) is %v, want %v", tree2.PrintKeys(0), []int{0, 1, 2})
+	}
+
 }

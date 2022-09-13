@@ -6,6 +6,14 @@ import (
 	"sync"
 )
 
+// jsonTree struct is a wrapper struct used for Marshalling and Unmarshalling operations
+type jsonTree[K Ordered, V any] struct {
+	ID           string           `json:"ID"`
+	RootNodeID   string           `json:"rootNodeID,omitempty"`
+	DeletedNodes int              `json:"deletedNodes"`
+	Nodes        []jsonNode[K, V] `json:"nodes,omitempty"`
+}
+
 // Tree struct represents a AVL BinarySearch Tree (BST)
 type Tree[K Ordered, V any] struct {
 	sync.RWMutex             //RWMutex for preventing concurrent writing operations
@@ -31,20 +39,66 @@ func (t *Tree[K, V]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(marshalNode)
 }
 
-/*func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
-	marshalNode := &struct {
-		ID           string        `json:"ID"`
-		RootNodeID   string        `json:"rootNodeID,omitempty"`
-		DeletedNodes int           `json:"deletedNodes"`
-		Nodes        []*Node[K, V] `json:"nodes,omitempty"`
-	}{}
+func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
 
-	if err := json.Unmarshal(data, &marshalNode); err != nil {
+	var receivedObj jsonTree[K, V]
+
+	err := json.Unmarshal(data, &receivedObj)
+	if err != nil {
 		return err
 	}
 
+	if len(receivedObj.Nodes) == 0 {
+		t.RootNode = nil
+		t.deletedNodes = 0
+	}
+
+	nodesMapping := make(map[string]jsonNode[K, V])
+	for _, node := range receivedObj.Nodes {
+		nodesMapping[node.ID] = node
+	}
+
+	var populateTree func(string) (*Node[K, V], error)
+
+	populateTree = func(id string) (*Node[K, V], error) {
+
+		v, ok := nodesMapping[id]
+		if !ok {
+			return nil, fmt.Errorf("incoherent node table")
+		}
+
+		node := &Node[K, V]{Key: v.Key, Value: v.Value, Deleted: v.Deleted}
+
+		if v.PreviousID != "" {
+			if previousNode, err := populateTree(v.PreviousID); err != nil {
+				return nil, err
+			} else {
+				node.Previous = previousNode
+				node.Previous.Parent = node
+			}
+		}
+
+		if v.NextID != "" {
+			if nextNode, err := populateTree(v.NextID); err != nil {
+				return nil, err
+			} else {
+				node.Next = nextNode
+				node.Next.Parent = node
+			}
+		}
+		return node, nil
+	}
+
+	rootNode, err := populateTree(receivedObj.RootNodeID)
+	if err != nil {
+		return err
+	}
+
+	t.deletedNodes = receivedObj.DeletedNodes
+	t.RootNode = rootNode
+
 	return nil
-}*/
+}
 
 // NewTree() return an empty new Tree
 func NewTree[K Ordered, V any]() *Tree[K, V] {
