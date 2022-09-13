@@ -1,6 +1,8 @@
 package avl
 
 import (
+	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -10,6 +12,39 @@ type Tree[K Ordered, V any] struct {
 	RootNode     *Node[K, V] //The root node of the Tree
 	deletedNodes int
 }
+
+func (t *Tree[K, V]) MarshalJSON() ([]byte, error) {
+	marshalNode := &struct {
+		ID           string        `json:"ID"`
+		RootNodeID   string        `json:"rootNodeID,omitempty"`
+		DeletedNodes int           `json:"deletedNodes"`
+		Nodes        []*Node[K, V] `json:"nodes,omitempty"`
+	}{
+		ID:           fmt.Sprintf("%p", t),
+		DeletedNodes: t.deletedNodes,
+	}
+	if t.RootNode != nil {
+		marshalNode.RootNodeID = fmt.Sprintf("%p", t.RootNode)
+		marshalNode.Nodes = t.Print(0)
+	}
+
+	return json.Marshal(marshalNode)
+}
+
+/*func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
+	marshalNode := &struct {
+		ID           string        `json:"ID"`
+		RootNodeID   string        `json:"rootNodeID,omitempty"`
+		DeletedNodes int           `json:"deletedNodes"`
+		Nodes        []*Node[K, V] `json:"nodes,omitempty"`
+	}{}
+
+	if err := json.Unmarshal(data, &marshalNode); err != nil {
+		return err
+	}
+
+	return nil
+}*/
 
 // NewTree() return an empty new Tree
 func NewTree[K Ordered, V any]() *Tree[K, V] {

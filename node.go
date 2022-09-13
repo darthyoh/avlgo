@@ -1,6 +1,10 @@
 package avl
 
-import "sync"
+import (
+	"encoding/json"
+	"fmt"
+	"sync"
+)
 
 // Node is one element of a Tree
 type Node[K Ordered, V any] struct {
@@ -9,6 +13,53 @@ type Node[K Ordered, V any] struct {
 	Value                  V           // Value of the Node can be anything
 	Parent, Previous, Next *Node[K, V] // Parent, Previous and Next are references to other Node in the Tree
 	Deleted                bool
+}
+
+// MarshalJSON **flats** the node replacing pointers to adresses as ID
+func (n *Node[K, V]) MarshalJSON() ([]byte, error) {
+
+	marshalNode := &struct {
+		ID         string `json:"ID"`
+		Key        K      `json:"key"`
+		Value      V      `json:"value"`
+		ParentID   string `json:"parentId,omitempty"`
+		PreviousID string `json:"previousId,omitempty"`
+		NextID     string `json:"nextId,omitempty"`
+		Deleted    bool   `json:"deleted"`
+	}{
+		ID:      fmt.Sprintf("%p", n),
+		Key:     n.Key,
+		Value:   n.Value,
+		Deleted: n.Deleted,
+	}
+	if n.Parent != nil {
+		marshalNode.ParentID = fmt.Sprintf("%p", n.Parent)
+	}
+	if n.Previous != nil {
+		marshalNode.PreviousID = fmt.Sprintf("%p", n.Previous)
+	}
+	if n.Next != nil {
+		marshalNode.NextID = fmt.Sprintf("%p", n.Next)
+	}
+	return json.Marshal(marshalNode)
+}
+
+func (n *Node[K, V]) UnmarshalJSON(data []byte) error {
+	marshalNode := &struct {
+		ID         string `json:"ID"`
+		Key        K      `json:"key"`
+		Value      V      `json:"value"`
+		ParentID   string `json:"parentId,omitempty"`
+		PreviousID string `json:"previousId,omitempty"`
+		NextID     string `json:"nextId,omitempty"`
+		Deleted    bool   `json:"deleted"`
+	}{}
+
+	if err := json.Unmarshal(data, &marshalNode); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Size() returns the Size of the node + its children

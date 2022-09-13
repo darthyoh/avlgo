@@ -1,6 +1,7 @@
 package avl
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -564,4 +565,27 @@ func TestPrint(t *testing.T) {
 		t.Errorf("NeedFlush should returns false")
 	}
 
+}
+
+func TestMarshal(t *testing.T) {
+	tree := NewTree[int, int]()
+	tree.PutOne(0, 0)
+	tree.PutOne(1, 1)
+	tree.PutOne(2, 2)
+
+	result, err := json.Marshal(tree)
+
+	if err != nil {
+		t.Errorf("The tree should be marshal : %v", err)
+	} else {
+		t.Logf(string(result))
+	}
+
+	var aux map[string]interface{}
+
+	if err = json.Unmarshal(result, &aux); err != nil {
+		t.Errorf("The tree should be unmarshal : %v", err)
+	} else {
+		t.Logf("%v", aux)
+	}
 }
