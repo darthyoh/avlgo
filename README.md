@@ -299,3 +299,7 @@ We decided to self-balance the tree when putting a new value on it, but not when
 Because `Add()` and `Delete()` modify the structure or this content, it should block the code : if a `Get()` method (or a `Size()` or `Depth()`) is running, adding or deleting should wait that the getting process is done. But getting datas in parallel are not a problem. That's why the Tree acts like a `sync.RWMutex` : reading functions `RLock()` and `defer RUnlock()`, and adding and deleting functions `Lock()` and `defer Unlock()`
 
 There are no benefit using add and delete in goroutines !
+
+Marshalling and Unmarshalling are enable :
+- when marshalling, the `*Node` arborescence is flatten : the json provides an array of Node objects where pointers to Parent, Next and Previous are replaced with the memory allocation
+- when unmarshalling, the `*Node` arborescence is turned back to a pointer architecture
