@@ -245,6 +245,22 @@ func (t *Tree[K, V]) Put(items ...struct {
 	return
 }
 
+// GetFromTo() return an ordered slice of values for keys found between from and to (including bounds or not)
+func (t *Tree[K, V]) GetFromTo(from, to K, boundsIncluded bool) (values []V) {
+	t.RLock()
+	defer t.RUnlock()
+
+	if t.RootNode == nil {
+		return
+	}
+
+	for _, node := range t.RootNode.GetFromTo(from, to, boundsIncluded) {
+		values = append(values, node.Value)
+	}
+
+	return
+}
+
 // Get() returns the value present in the tree for the key
 func (t *Tree[K, V]) Get(key K) (value V, ok bool) {
 	t.RLock()

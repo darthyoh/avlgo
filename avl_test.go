@@ -601,3 +601,75 @@ func TestMarshalAndUnmarshal(t *testing.T) {
 	}
 
 }
+
+func TestGetFromTo(t *testing.T) {
+	tree := NewTree[int, int]()
+	tree.PutOne(0, 0)
+	tree.PutOne(1, 1)
+	tree.PutOne(2, 2)
+	tree.PutOne(3, 3)
+	tree.PutOne(4, 4)
+	tree.PutOne(5, 5)
+	tree.PutOne(6, 6)
+
+	values := tree.GetFromTo(2, 4, true)
+
+	if !reflect.DeepEqual(values, []int{2, 3, 4}) {
+		t.Errorf("values is %v, want %v", values, []int{2, 3, 4})
+	}
+
+	values = tree.GetFromTo(3, 6, true)
+
+	if !reflect.DeepEqual(values, []int{3, 4, 5, 6}) {
+		t.Errorf("values is %v, want %v", values, []int{3, 4, 5, 6})
+	}
+
+	values = tree.GetFromTo(0, 2, true)
+
+	if !reflect.DeepEqual(values, []int{0, 1, 2}) {
+		t.Errorf("values is %v, want %v", values, []int{0, 1, 2})
+	}
+
+	values = tree.GetFromTo(0, 6, true)
+
+	if !reflect.DeepEqual(values, []int{0, 1, 2, 3, 4, 5, 6}) {
+		t.Errorf("values is %v, want %v", values, []int{0, 1, 2, 3, 4, 5, 6})
+	}
+
+	values = tree.GetFromTo(-10, 60, true)
+
+	if !reflect.DeepEqual(values, []int{0, 1, 2, 3, 4, 5, 6}) {
+		t.Errorf("values is %v, want %v", values, []int{0, 1, 2, 3, 4, 5, 6})
+	}
+
+	values = tree.GetFromTo(2, 4, false)
+
+	if !reflect.DeepEqual(values, []int{3}) {
+		t.Errorf("values is %v, want %v", values, []int{3})
+	}
+
+	values = tree.GetFromTo(3, 6, false)
+
+	if !reflect.DeepEqual(values, []int{4, 5}) {
+		t.Errorf("values is %v, want %v", values, []int{4, 5})
+	}
+
+	values = tree.GetFromTo(0, 2, false)
+
+	if !reflect.DeepEqual(values, []int{1}) {
+		t.Errorf("values is %v, want %v", values, []int{1})
+	}
+
+	values = tree.GetFromTo(0, 6, false)
+
+	if !reflect.DeepEqual(values, []int{1, 2, 3, 4, 5}) {
+		t.Errorf("values is %v, want %v", values, []int{1, 2, 3, 4, 5})
+	}
+
+	values = tree.GetFromTo(-10, 60, false)
+
+	if !reflect.DeepEqual(values, []int{0, 1, 2, 3, 4, 5, 6}) {
+		t.Errorf("values is %v, want %v", values, []int{0, 1, 2, 3, 4, 5, 6})
+	}
+
+}

@@ -267,8 +267,27 @@ func (n *Node[K, V]) rotateLeft() {
 	n.Parent.Previous = n
 }
 
+// GetFromTo() search in the node the value of the key between from and to and returns them
+func (n *Node[K, V]) GetFromTo(from, to K, boundsIncluded bool) []*Node[K, V] {
+	nodes := make([]*Node[K, V], 0)
+	if n.Key > from && n.Previous != nil {
+		nodes = append(nodes, n.Previous.GetFromTo(from, to, boundsIncluded)...)
+	}
+
+	if (n.Key > from && n.Key < to) || ((n.Key == to || n.Key == from) && boundsIncluded) {
+		nodes = append(nodes, n)
+	}
+
+	if n.Key < to && n.Next != nil {
+		nodes = append(nodes, n.Next.GetFromTo(from, to, boundsIncluded)...)
+	}
+
+	return nodes
+}
+
 // Get() search in the node the value of the key and returns it if present
 func (n *Node[K, V]) Get(key K) *Node[K, V] {
+
 	switch {
 	case key > n.Key: //key is bigger than the n.Key
 		if n.Next != nil { //delegates to its Next (if exist)
