@@ -1,7 +1,7 @@
-# avl-bst
+# avlgo
 A simple implementation of a AVL tree in **GO**, using generics.
 
-- [avl-bst](#avl-bst)
+- [avlgo](#avlgo)
   - [Introduction](#introduction)
   - [Installation](#installation)
   - [Basic usage](#basic-usage)

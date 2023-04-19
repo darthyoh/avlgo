@@ -1,4 +1,4 @@
-package avl
+package avlgo
 
 import (
 	"encoding/json"

@@ -1,4 +1,4 @@
-package avl
+package avlgo
 
 type Ordered interface {
 	Integer | Float | ~string
