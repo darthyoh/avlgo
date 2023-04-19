@@ -1,3 +1,3 @@
-module github.com/darthyoh/avl-bst
+module github.com/darthyoh/avlgo
 
 go 1.19
