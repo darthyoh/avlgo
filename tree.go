@@ -8,28 +8,24 @@ import (
 
 // jsonTree struct is a wrapper struct used for Marshalling and Unmarshalling operations
 type jsonTree[K Ordered, V any] struct {
-	ID           string           `json:"ID"`
-	RootNodeID   string           `json:"rootNodeID,omitempty"`
-	DeletedNodes int              `json:"deletedNodes"`
-	Nodes        []jsonNode[K, V] `json:"nodes,omitempty"`
+	ID         string           `json:"ID"`
+	RootNodeID string           `json:"rootNodeID,omitempty"`
+	Nodes      []jsonNode[K, V] `json:"nodes,omitempty"`
 }
 
 // Tree struct represents a AVL BinarySearch Tree (BST)
 type Tree[K Ordered, V any] struct {
 	sync.RWMutex             //RWMutex for preventing concurrent writing operations
 	RootNode     *Node[K, V] //The root node of the Tree
-	deletedNodes int
 }
 
 func (t *Tree[K, V]) MarshalJSON() ([]byte, error) {
 	marshalNode := &struct {
-		ID           string        `json:"ID"`
-		RootNodeID   string        `json:"rootNodeID,omitempty"`
-		DeletedNodes int           `json:"deletedNodes"`
-		Nodes        []*Node[K, V] `json:"nodes,omitempty"`
+		ID         string        `json:"ID"`
+		RootNodeID string        `json:"rootNodeID,omitempty"`
+		Nodes      []*Node[K, V] `json:"nodes,omitempty"`
 	}{
-		ID:           fmt.Sprintf("%p", t),
-		DeletedNodes: t.deletedNodes,
+		ID: fmt.Sprintf("%p", t),
 	}
 	if t.RootNode != nil {
 		marshalNode.RootNodeID = fmt.Sprintf("%p", t.RootNode)
@@ -50,7 +46,6 @@ func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
 
 	if len(receivedObj.Nodes) == 0 {
 		t.RootNode = nil
-		t.deletedNodes = 0
 	}
 
 	nodesMapping := make(map[string]jsonNode[K, V])
@@ -67,7 +62,7 @@ func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
 			return nil, fmt.Errorf("incoherent node table")
 		}
 
-		node := &Node[K, V]{Key: v.Key, Value: v.Value, Deleted: v.Deleted}
+		node := &Node[K, V]{Key: v.Key, Value: v.Value}
 
 		if v.PreviousID != "" {
 			if previousNode, err := populateTree(v.PreviousID); err != nil {
@@ -94,7 +89,6 @@ func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	t.deletedNodes = receivedObj.DeletedNodes
 	t.RootNode = rootNode
 
 	return nil
@@ -160,40 +154,6 @@ func (t *Tree[K, V]) PrintValues(depth uint) (values []V) {
 	return values
 }
 
-// NeedFlush() says if the tree needs to be flushed or not
-func (t *Tree[K, V]) NeedFlush() bool {
-	return t.deletedNodes != 0
-}
-
-// Flush() will rebase the tree, removing the deleted nodes
-func (t *Tree[K, V]) Flush() bool {
-
-	if !t.NeedFlush() {
-		return false
-	}
-
-	var newRoot *Node[K, V]
-	t.RLock()
-	for depth := 1; depth <= t.Depth(); depth++ {
-		for _, node := range t.Print(uint(depth)) {
-
-			if newRoot == nil {
-				newRoot = &Node[K, V]{Key: node.Key, Value: node.Value}
-			} else {
-				newRoot, _ = newRoot.Put(node.Key, node.Value)
-			}
-		}
-	}
-	t.RUnlock()
-
-	t.Lock()
-	defer t.Unlock()
-
-	t.RootNode = newRoot
-	t.deletedNodes = 0
-	return true
-}
-
 // AddOne() add one element in the Tree[K,V]. It returns true if succeded
 // If the key K is already present, its value is replaced
 // Because adding an element can produce a re-balance of the tree, AddOne() will LOCK the tree
@@ -204,11 +164,8 @@ func (t *Tree[K, V]) PutOne(key K, value V) bool {
 	if t.RootNode == nil {
 		t.RootNode = &Node[K, V]{Key: key, Value: value}
 	} else {
-		newRoot, unDeleteNode := t.RootNode.Put(key, value)
+		newRoot := t.RootNode.Put(key, value)
 		t.RootNode = newRoot
-		if unDeleteNode {
-			t.deletedNodes--
-		}
 	}
 	return true
 }
@@ -275,29 +232,20 @@ func (t *Tree[K, V]) Get(key K) (value V, ok bool) {
 	}
 }
 
-// Delete() marks as "deleted" the nodes corresponding to the passed keys
-// returns false if all keys aren't present in the tree
-func (t *Tree[K, V]) Delete(keys ...K) bool {
+// Delete() will remove the nodes corresponding to the passed keys
+// and returns the number of nodes deleted
+func (t *Tree[K, V]) Delete(keys ...K) int {
 
-	foundNodes := make([]*Node[K, V], 0)
+	deleted := 0
 
 	for _, k := range keys {
-		if foundNode := t.RootNode.Get(k); foundNode == nil {
-			return false
-		} else {
-			foundNodes = append(foundNodes, foundNode)
+		if foundNode := t.RootNode.Get(k); foundNode != nil {
+			t.Lock()
+			t.RootNode = foundNode.Delete()
+			deleted++
+			t.Unlock()
 		}
 	}
 
-	t.Lock()
-	defer t.Unlock()
-
-	for _, n := range foundNodes {
-		if !n.Deleted {
-			n.Deleted = true
-			t.deletedNodes++
-		}
-	}
-
-	return true
+	return deleted
 }

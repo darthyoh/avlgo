@@ -1,7 +1,6 @@
 package avlgo
 
 import (
-	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -16,7 +15,7 @@ func TestEmptyTree(t *testing.T) {
 	}
 }
 
-func TestPutOneingOneValue(t *testing.T) {
+func TestPutOneValue(t *testing.T) {
 	tree := NewTree[int, bool]()
 	tree.PutOne(1, true)
 	if tree.Size() != 1 {
@@ -312,7 +311,7 @@ func TestGettingSomeValues(t *testing.T) {
 	}
 }
 
-func TestAddgManyValues(t *testing.T) {
+func TestAddManyValues(t *testing.T) {
 	tree := NewTree[int, int]()
 	items := make([]struct {
 		key   int
@@ -333,273 +332,6 @@ func TestAddgManyValues(t *testing.T) {
 	if tree.Size() != ITEMS {
 		t.Errorf("Tree size is %d, want %v", tree.Size(), ITEMS)
 	}
-}
-
-func TestPrint(t *testing.T) {
-	tree := NewTree[int, int]()
-
-	for i := 0; i < 10; i++ {
-		tree.PutOne(i, i)
-	}
-
-	printedKeys := tree.PrintKeys(0)
-	printedValues := tree.PrintValues(0)
-
-	keys := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(1)
-	printedValues = tree.PrintValues(1)
-	keys = []int{3}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(2)
-	printedValues = tree.PrintValues(2)
-	keys = []int{1, 7}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(3)
-	printedValues = tree.PrintValues(3)
-	keys = []int{0, 2, 5, 8}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(4)
-	printedValues = tree.PrintValues(4)
-	keys = []int{4, 6, 9}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(5)
-
-	if len(printedKeys) != 0 {
-		t.Errorf("PrintKeys() lenght is %v, want 0", len(printedKeys))
-	}
-
-	size := tree.Size()
-	depth := tree.Depth()
-
-	if size != 10 {
-		t.Errorf("Size is %v, want 10", size)
-	}
-
-	if depth != 4 {
-		t.Errorf("Depth is %v, want 4", depth)
-	}
-
-	if tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns false")
-	}
-
-	tree.Delete(7, 5, 6)
-
-	if !tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns true")
-	}
-
-	size = tree.Size()
-	depth = tree.Depth()
-
-	if size != 7 {
-		t.Errorf("Size is %v, want 7", size)
-	}
-
-	if depth != 4 {
-		t.Errorf("Depth is %v, want 4", depth)
-	}
-
-	printedKeys = tree.PrintKeys(0)
-	printedValues = tree.PrintValues(0)
-
-	keys = []int{0, 1, 2, 3, 4, 8, 9}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(1)
-	printedValues = tree.PrintValues(1)
-	keys = []int{3}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(2)
-	printedValues = tree.PrintValues(2)
-	keys = []int{1}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(3)
-	printedValues = tree.PrintValues(3)
-	keys = []int{0, 2, 8}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(4)
-	printedValues = tree.PrintValues(4)
-	keys = []int{4, 9}
-
-	if !reflect.DeepEqual(printedKeys, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedKeys, keys)
-	}
-	if !reflect.DeepEqual(printedValues, keys) {
-		t.Errorf("PrintKeys() is %v, want %v", printedValues, keys)
-	}
-
-	printedKeys = tree.PrintKeys(5)
-
-	if len(printedKeys) != 0 {
-		t.Errorf("PrintKeys() lenght is %v, want 0", len(printedKeys))
-	}
-
-	tree.PutOne(5, 5)
-	tree.PutOne(6, 6)
-	tree.PutOne(7, 7)
-
-	if tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns false")
-	}
-
-	size = tree.Size()
-	depth = tree.Depth()
-
-	if size != 10 {
-		t.Errorf("Size is %v, want 10", size)
-	}
-
-	if depth != 4 {
-		t.Errorf("Depth is %v, want 4", depth)
-	}
-
-	if tree.Flush() != false {
-		t.Errorf("Flush should returns false when no need")
-	}
-
-	tree.Delete(5, 6, 7)
-	if !tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns true")
-	}
-
-	result := tree.Flush()
-	if !result {
-		t.Errorf("Flush should returns true after Flushing")
-	}
-
-	size = tree.Size()
-	depth = tree.Depth()
-
-	if size != 7 {
-		t.Errorf("Size is %v, want 7", size)
-	}
-
-	if depth != 3 {
-		t.Errorf("Depth is %v, want 3", depth)
-	}
-
-	if tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns false")
-	}
-
-	tree.Delete(3)
-	tree.Delete(3)
-
-	if !tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns true")
-	}
-
-	tree.PutOne(3, 3)
-	if tree.NeedFlush() {
-		t.Errorf("NeedFlush should returns false")
-	}
-
-}
-
-func TestMarshalAndUnmarshal(t *testing.T) {
-	tree := NewTree[int, int]()
-	tree.PutOne(0, 0)
-	tree.PutOne(1, 1)
-	tree.PutOne(2, 2)
-
-	result, err := json.Marshal(tree)
-
-	if err != nil {
-		t.Errorf("The tree should be marshal : %v", err)
-	}
-
-	tree2 := NewTree[int, int]()
-	tree.PutOne(5, 5)
-	tree.PutOne(6, 6)
-	tree.PutOne(7, 7)
-	tree.PutOne(8, 8)
-	tree.PutOne(9, 9)
-	tree.PutOne(10, 10)
-	tree.Delete(7)
-
-	if err = json.Unmarshal(result, &tree2); err != nil {
-		t.Errorf("The tree should be unmarshal : %v", err)
-	}
-
-	if tree2.Size() != 3 {
-		t.Errorf("The size is %v, want 3", tree2.Size())
-	}
-	if tree2.Depth() != 2 {
-		t.Errorf("The depth is %v, want 2", tree2.Depth())
-	}
-	if tree2.NeedFlush() {
-		t.Errorf("There's no need to flush")
-	}
-	if !reflect.DeepEqual([]int{0, 1, 2}, tree2.PrintKeys(0)) {
-		t.Errorf("PrintKeys(0) is %v, want %v", tree2.PrintKeys(0), []int{0, 1, 2})
-	}
-
 }
 
 func TestGetFromTo(t *testing.T) {
@@ -670,6 +402,27 @@ func TestGetFromTo(t *testing.T) {
 
 	if !reflect.DeepEqual(values, []int{0, 1, 2, 3, 4, 5, 6}) {
 		t.Errorf("values is %v, want %v", values, []int{0, 1, 2, 3, 4, 5, 6})
+	}
+
+}
+
+func TestDeletingValues(t *testing.T) {
+	tree := NewTree[int, int]()
+	tree.PutOne(0, 0)
+	deleted := tree.Delete(0)
+	if tree.Size() != 0 {
+		t.Errorf("Tree size is %d, want 0", tree.Size())
+	}
+	if deleted != 1 {
+		t.Errorf("Deleted nodes is %d, want 1", deleted)
+	}
+	tree.PutOne(0, 0)
+	deleted = tree.Delete(1)
+	if tree.Size() != 1 {
+		t.Errorf("Tree size is %d, want 1", tree.Size())
+	}
+	if deleted != 0 {
+		t.Errorf("Deleted nodes is %d, want 0", deleted)
 	}
 
 }

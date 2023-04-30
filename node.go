@@ -14,7 +14,6 @@ type jsonNode[K Ordered, V any] struct {
 	ParentID   string `json:"parentId,omitempty"`
 	PreviousID string `json:"previousId,omitempty"`
 	NextID     string `json:"nextId,omitempty"`
-	Deleted    bool   `json:"deleted"`
 }
 
 // Node is one element of a Tree
@@ -23,17 +22,15 @@ type Node[K Ordered, V any] struct {
 	Key                    K           // Key of the Node must be ordered
 	Value                  V           // Value of the Node can be anything
 	Parent, Previous, Next *Node[K, V] // Parent, Previous and Next are references to other Node in the Tree
-	Deleted                bool
 }
 
 // MarshalJSON **flats** the node replacing pointers to adresses as ID
 func (n *Node[K, V]) MarshalJSON() ([]byte, error) {
 
 	marshalNode := jsonNode[K, V]{
-		ID:      fmt.Sprintf("%p", n),
-		Key:     n.Key,
-		Value:   n.Value,
-		Deleted: n.Deleted,
+		ID:    fmt.Sprintf("%p", n),
+		Key:   n.Key,
+		Value: n.Value,
 	}
 	if n.Parent != nil {
 		marshalNode.ParentID = fmt.Sprintf("%p", n.Parent)
@@ -55,7 +52,6 @@ func (n *Node[K, V]) UnmarshalJSON(data []byte) error {
 		ParentID   string `json:"parentId,omitempty"`
 		PreviousID string `json:"previousId,omitempty"`
 		NextID     string `json:"nextId,omitempty"`
-		Deleted    bool   `json:"deleted"`
 	}{}
 
 	if err := json.Unmarshal(data, &marshalNode); err != nil {
@@ -68,17 +64,13 @@ func (n *Node[K, V]) UnmarshalJSON(data []byte) error {
 // Size() returns the Size of the node + its children
 // it returns 1 + recursive size of its children
 func (n *Node[K, V]) Size() (size int) {
-
-	if !n.Deleted {
-		size++
-	}
 	if n.Previous != nil {
 		size += n.Previous.Size()
 	}
 	if n.Next != nil {
 		size += n.Next.Size()
 	}
-	return size
+	return 1 + size
 }
 
 // Depth() returns the depth of the tree from this node
@@ -105,7 +97,7 @@ func (n *Node[K, V]) Depth() int {
 
 func (n *Node[K, V]) Print(wantedDepth, actualDepth uint) (nodes []*Node[K, V]) {
 	if wantedDepth != 0 {
-		if wantedDepth == actualDepth && !n.Deleted {
+		if wantedDepth == actualDepth {
 			nodes = append(nodes, n)
 			return nodes
 		} else {
@@ -122,9 +114,8 @@ func (n *Node[K, V]) Print(wantedDepth, actualDepth uint) (nodes []*Node[K, V]) 
 	if n.Previous != nil {
 		nodes = n.Previous.Print(wantedDepth, actualDepth)
 	}
-	if !n.Deleted {
-		nodes = append(nodes, n)
-	}
+	nodes = append(nodes, n)
+
 	if n.Next != nil {
 		nodes = append(nodes, n.Next.Print(wantedDepth, actualDepth)...)
 	}
@@ -132,7 +123,7 @@ func (n *Node[K, V]) Print(wantedDepth, actualDepth uint) (nodes []*Node[K, V]) 
 }
 
 // Put() add a new Node in the tree, preserving the order and the balance of the Tree
-func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V], unDeleteNode bool) {
+func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V]) {
 	switch {
 	case key > n.Key: //key is bigger than the n.Key
 		if n.Next != nil { //delegates to its Next (if exist)
@@ -140,7 +131,7 @@ func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V], unDeleteNode 
 		}
 		//otherwise : create a new Node and affect to its next
 		n.Next = &Node[K, V]{Key: key, Parent: n, Value: value}
-		return n.balance(), false
+		return n.balance()
 
 	case key < n.Key: //key is smaller than the n.Key
 		if n.Previous != nil { //delegates to its Previous (if exist)
@@ -148,15 +139,11 @@ func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V], unDeleteNode 
 		}
 		//otherwise : create a new Node and affect to its previiys
 		n.Previous = &Node[K, V]{Key: key, Parent: n, Value: value}
-		return n.balance(), false
+		return n.balance()
 
 	default: //key is the same than the n.Key so replace the Value
 		n.Value = value
-		if n.Deleted {
-			n.Deleted = false
-			return n.RootNode(), true
-		}
-		return n.RootNode(), false
+		return n.RootNode()
 	}
 }
 
@@ -304,10 +291,59 @@ func (n *Node[K, V]) Get(key K) *Node[K, V] {
 		return nil
 
 	default: //This is the key !
-		if !n.Deleted {
-			return n
-		} else {
+		return n
+	}
+}
+
+// Delete() will delete the node if the key is found and returns the new RootNode
+func (n *Node[K, V]) Delete() *Node[K, V] {
+
+	switch {
+	case n.Next == nil && n.Previous == nil: //The node to delete is a leaf... Simply delete it !
+		if n.Parent == nil { //the node to delete is the only node (and the root node...) simply return nil informing the tree that there's no more node
 			return nil
 		}
+		if n.Parent.Previous == n {
+			n.Parent.Previous = nil
+		} else {
+			n.Parent.Next = nil
+		}
+		return n.Parent.balance()
+	case (n.Next == nil && n.Previous != nil) || (n.Next != nil && n.Previous == nil): //The node has only one child
+		if n.Parent == nil { //the node to delete is the rootnode, so simply return its only child has new root node
+			if n.Previous != nil {
+				n.Previous.Parent = nil
+				newRoot := n.Previous
+				n.Previous = nil
+				return newRoot
+			} else {
+				n.Next.Parent = nil
+				newRoot := n.Next
+				n.Next = nil
+				return newRoot
+			}
+		} else {
+			//Get the child
+			successor := n.Previous
+			if n.Previous == nil {
+				successor = n.Next
+			}
+
+			successor.Parent = n.Parent
+
+			if n.Parent.Next == n {
+				n.Parent.Next = successor
+			} else {
+				n.Parent.Previous = successor
+			}
+			n.Parent = nil
+			n.Next = nil
+			n.Previous = nil
+
+			return successor.Parent.balance()
+		}
+	default: //the node to delete has two children
+		return nil
 	}
+
 }
