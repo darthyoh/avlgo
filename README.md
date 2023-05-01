@@ -165,15 +165,13 @@ In an AVL Tree, each node must be **balanced** : the difference between the dept
 // Fine ! And so on...
 ```  
 
-When you add a new node (is a leaf) you're sure that this node in balanced, so you have to recursivly test the parent balance and perform 1 or 2 rotations. The rotation ensures the tree stay ordered and balanced.
+When you add a new node (a leaf) you're sure that this node in balanced, so you have to recursivly test the parent balance and perform 1 or 2 rotations. The rotation ensures the tree stay ordered and balanced.
 
-So you have to test the balance of the tree after adding or removing node in the tree (in THIS implementation, there's something different happening when you remove a node, see [Implementation decisions](#implementation-decisions) to know why)
-
+So you have to test the balance of the tree after adding or removing node in the tree.
 
 See [Wikipedia](https://en.wikipedia.org/wiki/AVL_tree) for more infos about what is an AVL Tree.
 
 In this implementation, the `Tree` struct represents our AVL. It is composed of `Node` structs, each of them is linked to its `Parent`, and eventually to their `Previous` and `Next` child.
-
 
 
 ## Installation
@@ -182,7 +180,7 @@ Go to your project and download the dependency with :
 
 ```
 cd myProject
-go get github.com/darthyoh/avl-bst
+go get github.com/darthyoh/avlgo/v2
 ```
 
 Then, in your "main.go" file, you can import it with :
@@ -191,7 +189,7 @@ Then, in your "main.go" file, you can import it with :
 package main
 
 import (
-    "github.com/darthyoh/avl-bst"
+    "github.com/darthyoh/avlgo/v2"
 )
 
 func main() {
@@ -201,11 +199,11 @@ func main() {
 
 ## Basic usage
 
-You can use the `avl.NewTree()` utility to get a new `*Node[K,V]` and then use `Put()` or `PutOne()` methods to add some values :
+You can use the `avlgo.NewTree()` utility to get a new `*Node[K,V]` and then use `Put()` or `PutOne()` methods to add some values :
 
 ```
 // the Tree is generic about the Key and Value types
-tree := avl.NewTree[int, int]()
+tree := avlgo.NewTree[int, int]()
 
 tree.PutOne(0,0)
 
@@ -252,32 +250,7 @@ Use the `Delete()` method to delete some keys :
 ```
 tree.Delete(5,6,7)
 fmt.Println(tree.Size()) // 7
-fmt.Println(tree.Depth()) // 4 ????? We will see later why !!!
 ```
-
-*Restore* deleted values with `Put()` or `PutOne()` :
-
-```
-tree.PutOne(5)
-tree.PutOne(6)
-tree.PutOne(7)
-
-fmt.Println(tree.Size()) // 10
-fmt.Println(tree.Depth()) // 4
-```
-
-Delete again some values and `Flush()` the tree to balance it. Use `NeedFlush()` to see if the tree should be balanced 
-
-```
-fmt.Println(tree.NeedFlush()) //false
-tree.Delete(5,6,7)
-fmt.Println(tree.NeedFlush()) //true
-tree.Flush()
-fmt.Println(tree.Size()) // 7
-fmt.Println(tree.Depth()) // 3 !!! The tree is balanced
-```
-
-
 
 ## Implementation decisions
 
@@ -290,15 +263,7 @@ We decided to use `Put()`, `Get()` and `Delete()` method names, like classical *
 Putting some values will cause immediat re-balancing (with one or two rotations), meaning that the `Tree` couldn't be accessed.
 
 
-Deleting some values will **not** really delete them : if fact, each `Node` has a special boolean tag called `Deleted`. When you `Delete()` the key, the corresponding node set its deleted parameter to `true`. It will not be printed by `Print()`, `PrintKeys()` and `PrintValues()`, and it will not be count by `Size()`. But, it continues to be present in the tree, that's why `Depth()` returns the same depth ! Why ?
-
-Deleting a Node (aka re-link parent and childs to other nodes) will cause unbalance and force the methods to perform rotations, as the `Put()` method does. But after deleting a key, if you want to put it back, you have to re-balance the Tree again !!!!
-
-We decided to self-balance the tree when putting a new value on it, but not when we deleting it. We simply mark it as *deleted* and inform the Tree that one value was deleted (increment counter). When you `Put()` a key that has been deleted before, the deleted flag comes back to false and the counter is decremented. The `NeedFlush()` method simply return if the counter is 0. In this way, the tree is not many time rebalanced when deleting / putting back a value. The developer has the responsability to call `Flush()` when he juges the tree has to be balanced.
-
 Because `Add()` and `Delete()` modify the structure or this content, it should block the code : if a `Get()` method (or a `Size()` or `Depth()`) is running, adding or deleting should wait that the getting process is done. But getting datas in parallel are not a problem. That's why the Tree acts like a `sync.RWMutex` : reading functions `RLock()` and `defer RUnlock()`, and adding and deleting functions `Lock()` and `defer Unlock()`
-
-There are no benefit using add and delete in goroutines !
 
 Marshalling and Unmarshalling are enable :
 - when marshalling, the `*Node` arborescence is flatten : the json provides an array of Node objects where pointers to Parent, Next and Previous are replaced with the memory allocation

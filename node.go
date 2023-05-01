@@ -303,6 +303,7 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 		if n.Parent == nil { //the node to delete is the only node (and the root node...) simply return nil informing the tree that there's no more node
 			return nil
 		}
+		//other case : delete the parent link to this node (previous or next)
 		if n.Parent.Previous == n {
 			n.Parent.Previous = nil
 		} else {
@@ -323,7 +324,7 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 				return newRoot
 			}
 		} else {
-			//Get the child
+			//Get the child (previous or next)
 			successor := n.Previous
 			if n.Previous == nil {
 				successor = n.Next
@@ -343,7 +344,59 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 			return successor.Parent.balance()
 		}
 	default: //the node to delete has two children
-		return nil
+		//find the successor (min value of its next subtree)
+		successor := n.Next.min()
+
+		//if the successor is its direct Next, simply change links
+		if successor == n.Next {
+			successor.Parent = n.Parent
+			if successor.Parent != nil {
+				if successor.Parent.Previous == n {
+					successor.Parent.Previous = successor
+				} else {
+					successor.Parent.Next = successor
+				}
+			}
+			successor.Previous = n.Previous
+			successor.Previous.Parent = successor
+			n.Parent, n.Next, n.Previous = nil, nil, nil
+			return successor.balance()
+		} else {
+			//swap n and its successor
+			successor.Previous = n.Previous
+			successor.Previous.Parent = successor
+			n.Previous = nil
+			successorParent := successor.Parent
+			successor.Parent = n.Parent
+			if successor.Parent != nil {
+				if successor.Parent.Previous == n {
+					successor.Parent.Previous = successor
+				} else {
+					successor.Parent.Next = successor
+				}
+			}
+			n.Parent = successorParent
+			successorParent.Previous = n
+			successorNext := successor.Next
+			successor.Next = n.Next
+			successor.Next.Parent = successorNext
+			if successorNext != nil {
+				successorNext.Parent = n
+				n.Next = successorNext
+			}
+			//n and its successor are now swapped.
+			//The tree is always balanded !
+			//Just delete n (it will have only one or no child)
+			return n.Delete()
+		}
 	}
 
+}
+
+// min() is used to find the min key of a node's subtree
+func (n *Node[K, V]) min() *Node[K, V] {
+	if n.Previous == nil {
+		return n
+	}
+	return n.Previous.min()
 }

@@ -406,7 +406,7 @@ func TestGetFromTo(t *testing.T) {
 
 }
 
-func TestDeletingValues(t *testing.T) {
+func TestDeletingSimpleValues(t *testing.T) {
 	tree := NewTree[int, int]()
 	tree.PutOne(0, 0)
 	deleted := tree.Delete(0)
@@ -424,5 +424,109 @@ func TestDeletingValues(t *testing.T) {
 	if deleted != 0 {
 		t.Errorf("Deleted nodes is %d, want 0", deleted)
 	}
+	tree.PutOne(1, 1)
+	tree.PutOne(2, 2)
+	tree.PutOne(3, 3)
+	tree.PutOne(4, 4)
+	tree.PutOne(5, 5)
+	tree.PutOne(6, 6)
+	tree.PutOne(7, 7)
+	tree.PutOne(8, 8)
+	tree.PutOne(9, 9)
+	if tree.Size() != 10 {
+		t.Errorf("Tree size is %d, want 10", tree.Size())
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if tree.RootNode.Key != 3 {
+		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
+	}
+	deleted = tree.Delete(11)
+	if tree.Size() != 10 {
+		t.Errorf("Tree size is %d, want 10", tree.Size())
+	}
+	if deleted != 0 {
+		t.Errorf("Deleted nodes is %d, want 0", deleted)
+	}
 
+	//deleting 2 (a leaf) should not change anything in the tree
+	deleted = tree.Delete(2)
+	if tree.Size() != 9 {
+		t.Errorf("Tree size is %d, want 9", tree.Size())
+	}
+	if deleted != 1 {
+		t.Errorf("Deleted nodes is %d, want 1", deleted)
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if tree.RootNode.Key != 3 {
+		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
+	}
+
+	//deleting 1 will cause a re-balance
+	deleted = tree.Delete(1)
+	if tree.Size() != 8 {
+		t.Errorf("Tree size is %d, want 8", tree.Size())
+	}
+	if deleted != 1 {
+		t.Errorf("Deleted nodes is %d, want 1", deleted)
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if tree.RootNode.Key != 7 {
+		t.Errorf("RootNode is %d, want 7", tree.RootNode.Key)
+	}
+
+	//deleting 4 should not change anything in the tree
+	deleted = tree.Delete(4)
+	if tree.Size() != 7 {
+		t.Errorf("Tree size is %d, want 7", tree.Size())
+	}
+	if deleted != 1 {
+		t.Errorf("Deleted nodes is %d, want 1", deleted)
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if tree.RootNode.Key != 7 {
+		t.Errorf("RootNode is %d, want 7", tree.RootNode.Key)
+	}
+
+	//deleting 7 (root node) should create double rotation
+	deleted = tree.Delete(7)
+	if tree.Size() != 6 {
+		t.Errorf("Tree size is %d, want 6", tree.Size())
+	}
+	if deleted != 1 {
+		t.Errorf("Deleted nodes is %d, want 1", deleted)
+	}
+	if tree.Depth() != 3 {
+		t.Errorf("Tree depth is %d, want 3", tree.Size())
+	}
+	if tree.RootNode.Key != 5 {
+		t.Errorf("RootNode is %d, want 5", tree.RootNode.Key)
+	}
+	values := tree.PrintValues(0)
+	if !reflect.DeepEqual(values, []int{0, 3, 5, 6, 8, 9}) {
+		t.Errorf("values is %v, want %v", values, []int{0, 3, 5, 6, 8, 9})
+	}
+
+	values = tree.PrintValues(1)
+	wanted := []int{5}
+	if !reflect.DeepEqual(values, wanted) {
+		t.Errorf("values is %v, want %v", values, wanted)
+	}
+	values = tree.PrintValues(2)
+	wanted = []int{3, 8}
+	if !reflect.DeepEqual(values, wanted) {
+		t.Errorf("values is %v, want %v", values, wanted)
+	}
+	values = tree.PrintValues(3)
+	wanted = []int{0, 6, 9}
+	if !reflect.DeepEqual(values, wanted) {
+		t.Errorf("values is %v, want %v", values, wanted)
+	}
 }

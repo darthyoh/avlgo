@@ -123,7 +123,7 @@ func (t *Tree[K, V]) Depth() int {
 	return t.RootNode.Depth()
 }
 
-// Print() returns the ordered array of non-deleted nodes in the tree
+// Print() returns the ordered nodes in the tree
 // depth represents the depth in which print the elements (0 for all depths)
 func (t *Tree[K, V]) Print(depth uint) (nodes []*Node[K, V]) {
 	t.RLock()
@@ -135,7 +135,7 @@ func (t *Tree[K, V]) Print(depth uint) (nodes []*Node[K, V]) {
 	return t.RootNode.Print(depth, 1)
 }
 
-// PrintKeys() act like Print but returns only the ordered array of non-deleted keys in the tree
+// PrintKeys() act like Print but returns only the ordered array if keys in the tree
 func (t *Tree[K, V]) PrintKeys(depth uint) (keys []K) {
 	nodes := t.Print(depth)
 	for _, n := range nodes {
@@ -144,7 +144,7 @@ func (t *Tree[K, V]) PrintKeys(depth uint) (keys []K) {
 	return keys
 }
 
-// PrintValues() act like Print but returns only the ordered array of non-deleted values in the tree
+// PrintValues() act like Print but returns only the ordered array of values in the tree
 func (t *Tree[K, V]) PrintValues(depth uint) (values []V) {
 	nodes := t.Print(depth)
 
