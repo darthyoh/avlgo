@@ -1,97 +1,16 @@
 package avlgo
 
 import (
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
+	"os"
 	"sync"
 )
 
-// jsonTree struct is a wrapper struct used for Marshalling and Unmarshalling operations
-type jsonTree[K Ordered, V any] struct {
-	ID         string           `json:"ID"`
-	RootNodeID string           `json:"rootNodeID,omitempty"`
-	Nodes      []jsonNode[K, V] `json:"nodes,omitempty"`
-}
-
 // Tree struct represents a AVL BinarySearch Tree (BST)
 type Tree[K Ordered, V any] struct {
-	sync.RWMutex             //RWMutex for preventing concurrent writing operations
-	RootNode     *Node[K, V] //The root node of the Tree
-}
-
-func (t *Tree[K, V]) MarshalJSON() ([]byte, error) {
-	marshalNode := &struct {
-		ID         string        `json:"ID"`
-		RootNodeID string        `json:"rootNodeID,omitempty"`
-		Nodes      []*Node[K, V] `json:"nodes,omitempty"`
-	}{
-		ID: fmt.Sprintf("%p", t),
-	}
-	if t.RootNode != nil {
-		marshalNode.RootNodeID = fmt.Sprintf("%p", t.RootNode)
-		marshalNode.Nodes = t.Print(0)
-	}
-
-	return json.Marshal(marshalNode)
-}
-
-func (t *Tree[K, V]) UnmarshalJSON(data []byte) error {
-
-	var receivedObj jsonTree[K, V]
-
-	err := json.Unmarshal(data, &receivedObj)
-	if err != nil {
-		return err
-	}
-
-	if len(receivedObj.Nodes) == 0 {
-		t.RootNode = nil
-	}
-
-	nodesMapping := make(map[string]jsonNode[K, V])
-	for _, node := range receivedObj.Nodes {
-		nodesMapping[node.ID] = node
-	}
-
-	var populateTree func(string) (*Node[K, V], error)
-
-	populateTree = func(id string) (*Node[K, V], error) {
-
-		v, ok := nodesMapping[id]
-		if !ok {
-			return nil, fmt.Errorf("incoherent node table")
-		}
-
-		node := &Node[K, V]{Key: v.Key, Value: v.Value}
-
-		if v.PreviousID != "" {
-			if previousNode, err := populateTree(v.PreviousID); err != nil {
-				return nil, err
-			} else {
-				node.Previous = previousNode
-				node.Previous.Parent = node
-			}
-		}
-
-		if v.NextID != "" {
-			if nextNode, err := populateTree(v.NextID); err != nil {
-				return nil, err
-			} else {
-				node.Next = nextNode
-				node.Next.Parent = node
-			}
-		}
-		return node, nil
-	}
-
-	rootNode, err := populateTree(receivedObj.RootNodeID)
-	if err != nil {
-		return err
-	}
-
-	t.RootNode = rootNode
-
-	return nil
+	rwMutex  sync.RWMutex //RWMutex for preventing concurrent writing operations
+	RootNode *Node[K, V]  //The root node of the Tree
 }
 
 // NewTree() return an empty new Tree
@@ -99,11 +18,53 @@ func NewTree[K Ordered, V any]() *Tree[K, V] {
 	return &Tree[K, V]{}
 }
 
+// Encode() serialize the tree in gob format
+func (t *Tree[K, V]) Encode(output string) error {
+	//simply encode the tree structure
+	file, err := os.Create(output)
+	if err != nil {
+		return fmt.Errorf("unable to create the output file : %s", err)
+	}
+	defer file.Close()
+
+	encoder := gob.NewEncoder(file)
+	if err = encoder.Encode(t); err != nil {
+		return fmt.Errorf("unable to encode tree : %s", err)
+	}
+	return nil
+}
+
+// Decode() deserialize a tree from an input file
+func Decode[K Ordered, V any](input string) (*Tree[K, V], error) {
+	//first, decode the tree
+	tree := NewTree[K, V]()
+	file, err := os.Open(input)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open the input file : %s", err)
+	}
+	defer file.Close()
+
+	decoder := gob.NewDecoder(file)
+
+	if err = decoder.Decode(&tree); err != nil {
+		return nil, fmt.Errorf("unable to decode tree : %s", err)
+	}
+
+	//then, re-build the "parent" field of each Node (parent field is private, so not encoded by the Encode() method to prevent infinite loop while encoding)
+	if tree.RootNode != nil {
+		if !tree.RootNode.affectParentToChildren() {
+			return nil, fmt.Errorf("unable to decode tree : %s", err)
+		}
+	}
+
+	return tree, nil
+}
+
 // Size() returns the size (number of Nodes) of the Tree
 // Basically, it delegates the Size to its RootNode (or returns 0)
 func (t *Tree[K, V]) Size() int {
-	t.RLock()
-	defer t.RUnlock()
+	t.rwMutex.RLock()
+	defer t.rwMutex.RUnlock()
 	if t.RootNode == nil {
 		return 0
 	}
@@ -114,8 +75,8 @@ func (t *Tree[K, V]) Size() int {
 // Depth() returns the depth of the Tree (the maximum iteration for searching a Node)
 // Basically, it delegates the Size to its RootNode (or returns 0)
 func (t *Tree[K, V]) Depth() int {
-	t.RLock()
-	defer t.RUnlock()
+	t.rwMutex.RLock()
+	defer t.rwMutex.RUnlock()
 
 	if t.RootNode == nil {
 		return 0
@@ -126,8 +87,8 @@ func (t *Tree[K, V]) Depth() int {
 // Print() returns the ordered nodes in the tree
 // depth represents the depth in which print the elements (0 for all depths)
 func (t *Tree[K, V]) Print(depth uint) (nodes []*Node[K, V]) {
-	t.RLock()
-	defer t.RUnlock()
+	t.rwMutex.RLock()
+	defer t.rwMutex.RUnlock()
 
 	if t.RootNode == nil || depth > uint(t.Depth()) {
 		return nodes
@@ -158,8 +119,8 @@ func (t *Tree[K, V]) PrintValues(depth uint) (values []V) {
 // If the key K is already present, its value is replaced
 // Because adding an element can produce a re-balance of the tree, AddOne() will LOCK the tree
 func (t *Tree[K, V]) PutOne(key K, value V) bool {
-	t.Lock()
-	defer t.Unlock()
+	t.rwMutex.Lock()
+	defer t.rwMutex.Unlock()
 
 	if t.RootNode == nil {
 		t.RootNode = &Node[K, V]{Key: key, Value: value}
@@ -204,8 +165,8 @@ func (t *Tree[K, V]) Put(items ...struct {
 
 // GetFromTo() return an ordered slice of values for keys found between from and to (including bounds or not)
 func (t *Tree[K, V]) GetFromTo(from, to K, boundsIncluded bool) (values []V) {
-	t.RLock()
-	defer t.RUnlock()
+	t.rwMutex.RLock()
+	defer t.rwMutex.RUnlock()
 
 	if t.RootNode == nil {
 		return
@@ -220,8 +181,8 @@ func (t *Tree[K, V]) GetFromTo(from, to K, boundsIncluded bool) (values []V) {
 
 // Get() returns the value present in the tree for the key
 func (t *Tree[K, V]) Get(key K) (value V, ok bool) {
-	t.RLock()
-	defer t.RUnlock()
+	t.rwMutex.RLock()
+	defer t.rwMutex.RUnlock()
 	if t.RootNode == nil {
 		return
 	}
@@ -240,10 +201,10 @@ func (t *Tree[K, V]) Delete(keys ...K) int {
 
 	for _, k := range keys {
 		if foundNode := t.RootNode.Get(k); foundNode != nil {
-			t.Lock()
+			t.rwMutex.Lock()
 			t.RootNode = foundNode.Delete()
 			deleted++
-			t.Unlock()
+			t.rwMutex.Unlock()
 		}
 	}
 

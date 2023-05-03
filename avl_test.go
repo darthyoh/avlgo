@@ -530,3 +530,44 @@ func TestDeletingSimpleValues(t *testing.T) {
 		t.Errorf("values is %v, want %v", values, wanted)
 	}
 }
+
+func TestEncodeAndDecode(t *testing.T) {
+	tree := NewTree[int, int]()
+	tree.PutOne(0, 0)
+	tree.PutOne(1, 1)
+	tree.PutOne(2, 2)
+	tree.PutOne(3, 3)
+	tree.PutOne(4, 4)
+	tree.PutOne(5, 5)
+	tree.PutOne(6, 6)
+	tree.PutOne(7, 7)
+	tree.PutOne(8, 8)
+	tree.PutOne(9, 9)
+	if tree.Size() != 10 {
+		t.Errorf("Tree size is %d, want 10", tree.Size())
+	}
+	if tree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if tree.RootNode.Key != 3 {
+		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
+	}
+	if err := tree.Encode("./avl_test_save.gob"); err != nil {
+		t.Errorf("Encode() shouldn't return an error. %s is returned", err)
+	}
+
+	newTree, err := Decode[int, int]("./avl_test_save.gob")
+	if err != nil {
+		t.Errorf("Decode() shouldn't return an error. %s is returned", err)
+	}
+	if newTree.Size() != 10 {
+		t.Errorf("Tree size is %d, want 10", tree.Size())
+	}
+	if newTree.Depth() != 4 {
+		t.Errorf("Tree depth is %d, want 4", tree.Size())
+	}
+	if newTree.RootNode.Key != 3 {
+		t.Errorf("RootNode is %d, want 3", tree.RootNode.Key)
+	}
+
+}

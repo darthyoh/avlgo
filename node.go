@@ -1,64 +1,26 @@
 package avlgo
 
-import (
-	"encoding/json"
-	"fmt"
-	"sync"
-)
-
-// jsonNode struct is a wrapper struct used for Marshalling and Unmarshalling operations
-type jsonNode[K Ordered, V any] struct {
-	ID         string `json:"ID"`
-	Key        K      `json:"key"`
-	Value      V      `json:"value"`
-	ParentID   string `json:"parentId,omitempty"`
-	PreviousID string `json:"previousId,omitempty"`
-	NextID     string `json:"nextId,omitempty"`
-}
-
 // Node is one element of a Tree
 type Node[K Ordered, V any] struct {
-	sync.Mutex
 	Key                    K           // Key of the Node must be ordered
 	Value                  V           // Value of the Node can be anything
-	Parent, Previous, Next *Node[K, V] // Parent, Previous and Next are references to other Node in the Tree
+	parent, Previous, Next *Node[K, V] // parent, Previous and Next are references to other Node in the Tree
 }
 
-// MarshalJSON **flats** the node replacing pointers to adresses as ID
-func (n *Node[K, V]) MarshalJSON() ([]byte, error) {
-
-	marshalNode := jsonNode[K, V]{
-		ID:    fmt.Sprintf("%p", n),
-		Key:   n.Key,
-		Value: n.Value,
-	}
-	if n.Parent != nil {
-		marshalNode.ParentID = fmt.Sprintf("%p", n.Parent)
-	}
+// affectParent() is a method used to re-affect the Parent Node of the children
+// this method is used while de-serializing a tree in gob format
+func (n *Node[K, V]) affectParentToChildren() bool {
+	previousOk, nextOk := true, true
 	if n.Previous != nil {
-		marshalNode.PreviousID = fmt.Sprintf("%p", n.Previous)
+		n.Previous.parent = n
+		previousOk = n.Previous.affectParentToChildren()
+
 	}
 	if n.Next != nil {
-		marshalNode.NextID = fmt.Sprintf("%p", n.Next)
+		n.Next.parent = n
+		nextOk = n.Previous.affectParentToChildren()
 	}
-	return json.Marshal(marshalNode)
-}
-
-func (n *Node[K, V]) UnmarshalJSON(data []byte) error {
-	marshalNode := &struct {
-		ID         string `json:"ID"`
-		Key        K      `json:"key"`
-		Value      V      `json:"value"`
-		ParentID   string `json:"parentId,omitempty"`
-		PreviousID string `json:"previousId,omitempty"`
-		NextID     string `json:"nextId,omitempty"`
-	}{}
-
-	if err := json.Unmarshal(data, &marshalNode); err != nil {
-		return err
-	}
-
-	return nil
+	return previousOk && nextOk
 }
 
 // Size() returns the Size of the node + its children
@@ -130,7 +92,7 @@ func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V]) {
 			return n.Next.Put(key, value)
 		}
 		//otherwise : create a new Node and affect to its next
-		n.Next = &Node[K, V]{Key: key, Parent: n, Value: value}
+		n.Next = &Node[K, V]{Key: key, parent: n, Value: value}
 		return n.balance()
 
 	case key < n.Key: //key is smaller than the n.Key
@@ -138,7 +100,7 @@ func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V]) {
 			return n.Previous.Put(key, value)
 		}
 		//otherwise : create a new Node and affect to its previiys
-		n.Previous = &Node[K, V]{Key: key, Parent: n, Value: value}
+		n.Previous = &Node[K, V]{Key: key, parent: n, Value: value}
 		return n.balance()
 
 	default: //key is the same than the n.Key so replace the Value
@@ -150,8 +112,8 @@ func (n *Node[K, V]) Put(key K, value V) (newRootNode *Node[K, V]) {
 // RootNode returns the root node of the tree
 // (recursive call to the node which has no parent)
 func (n *Node[K, V]) RootNode() *Node[K, V] {
-	if n.Parent != nil {
-		return n.Parent.RootNode()
+	if n.parent != nil {
+		return n.parent.RootNode()
 	}
 	return n
 }
@@ -180,10 +142,10 @@ func (n *Node[K, V]) balance() *Node[K, V] {
 
 	//case of balanced node : recursive call to balance() to its parent
 	if balance >= -1 && balance <= 1 {
-		if n.Parent == nil {
+		if n.parent == nil {
 			return n
 		}
-		return n.Parent.balance()
+		return n.parent.balance()
 	}
 	if balance > 1 { //unbalanced node with deeper Next
 		if n.Next.getBalance() < 0 { //double rotation (to avoir infinite rotation)
@@ -198,60 +160,60 @@ func (n *Node[K, V]) balance() *Node[K, V] {
 	}
 
 	//recursive balance on parent
-	if n.Parent == nil {
+	if n.parent == nil {
 		return n
 	}
-	return n.Parent.balance()
+	return n.parent.balance()
 
 }
 
 // rotateRight() rotates the node to the right
 func (n *Node[K, V]) rotateRight() {
-	if n.Parent == nil {
-		n.Previous.Parent = nil
+	if n.parent == nil {
+		n.Previous.parent = nil
 	} else {
-		n.Previous.Parent = n.Parent
+		n.Previous.parent = n.parent
 
-		if n.Parent.Next == n {
-			n.Parent.Next = n.Previous
+		if n.parent.Next == n {
+			n.parent.Next = n.Previous
 		} else {
-			n.Parent.Previous = n.Previous
+			n.parent.Previous = n.Previous
 		}
 	}
 
-	n.Parent = n.Previous
+	n.parent = n.Previous
 
 	if n.Previous.Next != nil {
 		n.Previous = n.Previous.Next
-		n.Previous.Parent = n
+		n.Previous.parent = n
 	} else {
 		n.Previous = nil
 	}
-	n.Parent.Next = n
+	n.parent.Next = n
 }
 
 // rotateRight() rotates the node to the left
 func (n *Node[K, V]) rotateLeft() {
-	if n.Parent == nil {
-		n.Next.Parent = nil
+	if n.parent == nil {
+		n.Next.parent = nil
 	} else {
-		n.Next.Parent = n.Parent
+		n.Next.parent = n.parent
 
-		if n.Parent.Next == n {
-			n.Parent.Next = n.Next
+		if n.parent.Next == n {
+			n.parent.Next = n.Next
 		} else {
-			n.Parent.Previous = n.Next
+			n.parent.Previous = n.Next
 		}
 	}
-	n.Parent = n.Next
+	n.parent = n.Next
 
 	if n.Next.Previous != nil {
 		n.Next = n.Next.Previous
-		n.Next.Parent = n
+		n.Next.parent = n
 	} else {
 		n.Next = nil
 	}
-	n.Parent.Previous = n
+	n.parent.Previous = n
 }
 
 // GetFromTo() search in the node the value of the key between from and to and returns them
@@ -300,25 +262,25 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 
 	switch {
 	case n.Next == nil && n.Previous == nil: //The node to delete is a leaf... Simply delete it !
-		if n.Parent == nil { //the node to delete is the only node (and the root node...) simply return nil informing the tree that there's no more node
+		if n.parent == nil { //the node to delete is the only node (and the root node...) simply return nil informing the tree that there's no more node
 			return nil
 		}
 		//other case : delete the parent link to this node (previous or next)
-		if n.Parent.Previous == n {
-			n.Parent.Previous = nil
+		if n.parent.Previous == n {
+			n.parent.Previous = nil
 		} else {
-			n.Parent.Next = nil
+			n.parent.Next = nil
 		}
-		return n.Parent.balance()
+		return n.parent.balance()
 	case (n.Next == nil && n.Previous != nil) || (n.Next != nil && n.Previous == nil): //The node has only one child
-		if n.Parent == nil { //the node to delete is the rootnode, so simply return its only child has new root node
+		if n.parent == nil { //the node to delete is the rootnode, so simply return its only child has new root node
 			if n.Previous != nil {
-				n.Previous.Parent = nil
+				n.Previous.parent = nil
 				newRoot := n.Previous
 				n.Previous = nil
 				return newRoot
 			} else {
-				n.Next.Parent = nil
+				n.Next.parent = nil
 				newRoot := n.Next
 				n.Next = nil
 				return newRoot
@@ -330,18 +292,18 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 				successor = n.Next
 			}
 
-			successor.Parent = n.Parent
+			successor.parent = n.parent
 
-			if n.Parent.Next == n {
-				n.Parent.Next = successor
+			if n.parent.Next == n {
+				n.parent.Next = successor
 			} else {
-				n.Parent.Previous = successor
+				n.parent.Previous = successor
 			}
-			n.Parent = nil
+			n.parent = nil
 			n.Next = nil
 			n.Previous = nil
 
-			return successor.Parent.balance()
+			return successor.parent.balance()
 		}
 	default: //the node to delete has two children
 		//find the successor (min value of its next subtree)
@@ -349,39 +311,39 @@ func (n *Node[K, V]) Delete() *Node[K, V] {
 
 		//if the successor is its direct Next, simply change links
 		if successor == n.Next {
-			successor.Parent = n.Parent
-			if successor.Parent != nil {
-				if successor.Parent.Previous == n {
-					successor.Parent.Previous = successor
+			successor.parent = n.parent
+			if successor.parent != nil {
+				if successor.parent.Previous == n {
+					successor.parent.Previous = successor
 				} else {
-					successor.Parent.Next = successor
+					successor.parent.Next = successor
 				}
 			}
 			successor.Previous = n.Previous
-			successor.Previous.Parent = successor
-			n.Parent, n.Next, n.Previous = nil, nil, nil
+			successor.Previous.parent = successor
+			n.parent, n.Next, n.Previous = nil, nil, nil
 			return successor.balance()
 		} else {
 			//swap n and its successor
 			successor.Previous = n.Previous
-			successor.Previous.Parent = successor
+			successor.Previous.parent = successor
 			n.Previous = nil
-			successorParent := successor.Parent
-			successor.Parent = n.Parent
-			if successor.Parent != nil {
-				if successor.Parent.Previous == n {
-					successor.Parent.Previous = successor
+			successorparent := successor.parent
+			successor.parent = n.parent
+			if successor.parent != nil {
+				if successor.parent.Previous == n {
+					successor.parent.Previous = successor
 				} else {
-					successor.Parent.Next = successor
+					successor.parent.Next = successor
 				}
 			}
-			n.Parent = successorParent
-			successorParent.Previous = n
+			n.parent = successorparent
+			successorparent.Previous = n
 			successorNext := successor.Next
 			successor.Next = n.Next
-			successor.Next.Parent = successorNext
+			successor.Next.parent = successorNext
 			if successorNext != nil {
-				successorNext.Parent = n
+				successorNext.parent = n
 				n.Next = successorNext
 			}
 			//n and its successor are now swapped.
